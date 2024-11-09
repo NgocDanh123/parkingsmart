@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Smart Parking</title>
+  <style>
+   body {
+      font-family: 'Arial', sans-serif;
+      display: flex;
+      background-color: #333;
+      margin: 0;
+      padding: 0;
+    }
+    .sidebar {
+      width: 250px;
+      background-color: rgba(52, 58, 64, 0.85);
+      padding: 20px;
+      box-shadow: 2px 0 5px rgba(0, 0, 0, 0.2);
+      height: 100vh;
+    }
+    .sidebar h2 {
+      text-align: center;
+      font-size: 1.8em;
+      margin-bottom: 20px;
+      color: #ffffff;
+    }
+    .sidebar ul {
+      list-style-type: none;
+      padding: 0;
+    }
+    .sidebar ul li {
+      margin: 10px 0;
+      cursor: pointer;
+      text-align: center;
+      font-size: 1.2em;
+      background-color: #495057;
+      padding: 10px;
+      border-radius: 5px;
+      transition: background-color 0.3s;
+      color: #ffffff;
+    }
+    .sidebar ul li:hover {
+      background-color: #6c757d;
+    }
+    .main-content {
+      flex-grow: 1;
+      padding: 20px;
+      color: #ffffff; /* Đổi màu chữ để phù hợp */
+    }
+    h1, h2 {
+      color: #ffffff; /* Đổi màu chữ để dễ nhìn trên nền ảnh */
+    }
+    #available-spaces {
+      font-size: 1.5em;
+      margin-bottom: 20px;
+      font-weight: bold;
+      color: #ffffff;
+    }
+    .parking-lot {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      grid-gap: 15px;
+      margin-top: 20px;
+    }
+    .parking-spot {
+      width: 100%;
+      height: 100px;
+      background-color: rgba(255, 255, 255, 0.9);
+      color: #343a40;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      cursor: pointer;
+      font-weight: bold;
+      font-size: 1.5em;
+      border-radius: 10px;
+      transition: background-color 0.3s;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    }
+    .parking-spot.occupied {
+      background-color: #ff4c4c;
+      color: white;
+    }
+    .parking-spot.available {
+      background-color: #4CAF50;
+      color: white;
+    }
+    .temperature, .humidity, .gas {
+      margin-top: 20px;
+      font-size: 1.8em;
+      color: #0F9;
+    }
+    .content-section {
+      display: none;
+      margin-top: 20px;
+    }
+    .content-section.active {
+      display: block;
+    }
+    .sensor-chart {
+      margin-top: 20px;
+      height: 300px;
+    }
+    .option-buttons {
+      margin-top: 20px;
+    }
+    .option-buttons button {
+      margin: 5px;
+      padding: 10px 20px;
+      font-size: 1em;
+      cursor: pointer;
+    }
+	
+    /* Styles cho bảng thời gian ra vào */
+    table {
+      width: 100%;
+      margin-top: 20px;
+      border-collapse: collapse;
+      color: #ffffff;
+    }
+    table, th, td {
+      border: 1px solid #ffffff;
+    }
+    th, td {
+      padding: 10px;
+      text-align: center;
+    }
+    th {
+      background-color: rgba(52, 58, 64, 0.85);
+    }
+  </style>
+</head>
+<body>
+
+<!-- Sidebar -->
+<div class="sidebar">
+    <h2>Parking Options</h2>
+    <ul>
+      <li onclick="showSection('parking-lot-section')">View Parking Lot</li>
+      <li onclick="showSection('sensor-data-section')">View Sensor Data</li>
+      <li id="mode-toggle" onclick="toggleMode()">Manual Mode</li>
+      <li id="light-toggle" onclick="toggleLight()">Toggle Light</li> <!-- Nút bật/tắt đèn -->
+    </ul>
+</div>
+
+<!-- Main Content -->
+<div class="main-content">
+  <h1>Smart Parking System</h1>
+  
+  <!-- Available Spaces -->
+  <div id="available-spaces">Available Spaces: <span id="available-count">4</span>/4</div>
+
+  <!-- Parking Lot Section -->
+  <div id="parking-lot-section" class="content-section active">
+    <h2>Parking Lot</h2>
+    <div class="parking-lot" id="parking-lot">
+      <div class="parking-spot available" id="spot-1" onclick="toggleParkingSpot('spot-1')">1</div>
+      <div class="parking-spot available" id="spot-2" onclick="toggleParkingSpot('spot-2')">2</div>
+      <div class="parking-spot available" id="spot-3" onclick="toggleParkingSpot('spot-3')">3</div>
+      <div class="parking-spot available" id="spot-4" onclick="toggleParkingSpot('spot-4')">4</div>
+  </div>
+  
+ <h3>Parking Times</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Spot</th>
+          <th>Time In</th>
+          <th>Time Out</th>
+        </tr>
+      </thead>
+      <tbody id="time-table-body">
+        <tr>
+          <td>1</td>
+          <td>--</td>
+          <td>--</td>
+        </tr>
+        <tr>
+          <td>2</td>
+          <td>--</td>
+          <td>--</td>
+        </tr>
+        <tr>
+          <td>3</td>
+          <td>--</td>
+          <td>--</td>
+        </tr>
+        <tr>
+          <td>4</td>
+          <td>--</td>
+          <td>--</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <!-- Sensor Data Section -->
+  <div id="sensor-data-section" class="content-section">
+    <h2>Sensor Data</h2>
+    <div class="temperature">Temperature: <span id="temperature-value">--</span>°C</div>
+    <div class="humidity">Humidity: <span id="humidity-value">--</span>%</div>
+    <div class="gas">Gas Level: <span id="gas-value">--</span>ppm</div>
+    <canvas id="sensor-chart" class="sensor-chart"></canvas>
+  </div>
+</div>
+
+<script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  let totalSpaces = 4;
+  let occupiedSpaces = 0;
+  let mode = 'automatic';
+  let lightStatus = false;
+  let parkingTimes = {
+    'spot-1': { timeIn: '--', timeOut: '--' },
+    'spot-2': { timeIn: '--', timeOut: '--' },
+    'spot-3': { timeIn: '--', timeOut: '--' },
+    'spot-4': { timeIn: '--', timeOut: '--' }
+  };
+
+  // Dữ liệu cho biểu đồ
+  let chartData = {
+    temperature: [],
+    humidity: [],
+    gas: [],
+  };
+ 
+
+  // Khởi tạo biểu đồ
+  const ctx = document.getElementById('sensor-chart').getContext('2d');
+  let sensorChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: Array.from({ length: 10 }, (_, i) => i + 1), // Giả định có 10 điểm dữ liệu
+      datasets: [{
+        label: 'Temperature',
+        data: [],
+        borderColor: 'rgba(255, 99, 132, 1)',
+        borderWidth: 2,
+        fill: false
+      },
+      {
+        label: 'Humidity',
+        data: [],
+        borderColor: 'rgba(54, 162, 235, 1)',
+        borderWidth: 2,
+        fill: false
+      },
+      {
+        label: 'Gas Level',
+        data: [],
+        borderColor: 'rgba(75, 192, 192, 1)',
+        borderWidth: 2,
+        fill: false
+      }]
+    },
+    options: {
+      scales: {
+        x: {
+          title: {
+            display: true,
+            text: 'Data Points'
+          }
+        },
+        y: {
+          title: {
+            display: true,
+            text: 'Values'
+          }
+        }
+      }
+    }
+  });
+
+  function updateChart() {
+    if (chartData.temperature.length > 10) {
+      chartData.temperature.shift();
+      chartData.humidity.shift();
+      chartData.gas.shift();
+    }
+    sensorChart.data.datasets[0].data = chartData.temperature;
+    sensorChart.data.datasets[1].data = chartData.humidity;
+    sensorChart.data.datasets[2].data = chartData.gas;
+    sensorChart.update();
+  }
+  function toggleParkingSpot(spotId) {
+    const spot = document.getElementById(spotId);
+    const isOccupied = spot.classList.contains('available');
+    if (isOccupied) {
+      spot.classList.remove('available');
+      spot.classList.add('occupied');
+      parkingTimes[spotId].timeIn = new Date().toLocaleTimeString();
+      occupiedSpaces++;
+    } else {
+      spot.classList.remove('occupied');
+      spot.classList.add('available');
+      parkingTimes[spotId].timeOut = new Date().toLocaleTimeString();
+      occupiedSpaces--;
+    }
+    updateAvailableSpaces();
+    updateTimeTable();
+  }
+
+  function updateAvailableSpaces() {
+    document.getElementById('available-count').textContent = totalSpaces - occupiedSpaces;
+  }
+
+  function updateTimeTable() {
+    const tbody = document.getElementById('time-table-body');
+    tbody.innerHTML = '';
+    for (const [spot, times] of Object.entries(parkingTimes)) {
+      const row = `<tr>
+                     <td>${spot.replace('spot-', '')}</td>
+                     <td>${times.timeIn}</td>
+                     <td>${times.timeOut}</td>
+                   </tr>`;
+      tbody.innerHTML += row;
+    }
+  }
+
+  function toggleMode() {
+    mode = mode === 'automatic' ? 'manual' : 'automatic';
+    document.getElementById('mode-toggle').textContent = mode === 'automatic' ? 'Manual Mode' : 'Automatic Mode';
+  }
+
+  function toggleLight() {
+    lightStatus = !lightStatus;
+    document.getElementById('light-toggle').textContent = lightStatus ? 'Turn Off Light' : 'Turn On Light';
+  }
+
+  function showSection(sectionId) {
+    document.querySelectorAll('.content-section').forEach(section => section.classList.remove('active'));
+    document.getElementById(sectionId).classList.add('active');
+  }
+</script>
+
+</body>
+</html>
